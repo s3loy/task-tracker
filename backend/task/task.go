@@ -12,27 +12,19 @@ const (
 	StatusTodo       TaskStatus = "todo"
 	StatusInProgress TaskStatus = "in-progress"
 	StatusDone       TaskStatus = "done"
-	StatusInbox      TaskStatus = "inbox"
+	StatusOverdue    TaskStatus = "overdue"
 )
 
 type Task struct {
 	ID          int        `json:"id"`
 	Description string     `json:"description"`
-	CategoryID  int        `json:"categoryId,omitempty"`
 	Status      TaskStatus `json:"status"`
+	Archived    bool       `json:"archived,omitempty"`
 	CreatedAt   time.Time  `json:"createdAt"`
 	UpdatedAt   time.Time  `json:"updatedAt"`
-	Priority    int        `json:"priority,omitempty"`
-	DueDate     *time.Time `json:"dueDate,omitempty"`
-	Tags        []string   `json:"tags,omitempty"`
-	ParentID    int        `json:"parentId,omitempty"`
+	Deadline    *time.Time `json:"deadline,omitempty"`
 	CompletedAt *time.Time `json:"completedAt,omitempty"`
-}
-
-type Category struct {
-	ID    int    `json:"id"`
-	Name  string `json:"name"`
-	Color string `json:"color,omitempty"`
+	StartedAt   *time.Time `json:"startedAt,omitempty"`
 }
 
 func (t *Task) Validate() error {
@@ -58,6 +50,10 @@ func (t *Task) MarkAsInProgress() {
 	t.Status = StatusInProgress
 	t.UpdatedAt = time.Now()
 	t.CompletedAt = nil
+	if t.StartedAt == nil {
+		now := time.Now()
+		t.StartedAt = &now
+	}
 }
 
 func (t *Task) MarkAsDone() {
@@ -65,6 +61,11 @@ func (t *Task) MarkAsDone() {
 	now := time.Now()
 	t.UpdatedAt = now
 	t.CompletedAt = &now
+}
+
+func (t *Task) SetArchived(archived bool) {
+	t.Archived = archived
+	t.UpdatedAt = time.Now()
 }
 
 func (t *Task) UpdateDescription(description string) error {
@@ -84,7 +85,7 @@ func (t *Task) String() string {
 		StatusTodo:       "[ ]",
 		StatusInProgress: "[~]",
 		StatusDone:       "[✓]",
-		StatusInbox:      "[📥]",
+		StatusOverdue:    "[⏰]",
 	}
 	icon := statusIcon[t.Status]
 	return fmt.Sprintf("%d. %s %s (创建于: %s)",
@@ -97,7 +98,7 @@ func (t *Task) String() string {
 
 func (s TaskStatus) IsValid() bool {
 	switch s {
-	case StatusTodo, StatusInProgress, StatusDone, StatusInbox:
+	case StatusTodo, StatusInProgress, StatusDone, StatusOverdue:
 		return true
 	default:
 		return false
