@@ -11,7 +11,7 @@ task-cli
 
 go.work
 
-task-cli
+task-tracker
 tasks.json
 categories.json
 
